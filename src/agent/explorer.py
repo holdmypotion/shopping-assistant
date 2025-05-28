@@ -1,46 +1,52 @@
 from src.state import State
 from langgraph.types import Command
 from langgraph.graph import END
-from langchain.prompts import PromptTemplate
-from langgraph.prebuilt import create_react_agent
 from langchain.chat_models import init_chat_model
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, SystemMessage
 from src.core.config import settings
+from pydantic import BaseModel, Field
 
+class Response(BaseModel):
+    response: str = Field(description="The response to the user's query")
 
-prompt = PromptTemplate(
-    template="""
-    You are an expert product explorer and shopping assistant. You have access to a list of products that have been found for the user based on their search criteria.
+PROMPT = """
+You are an expert product explorer and shopping assistant. You have access to a list of products that have been found for the user based on their search criteria.
 
-    Your task is to:
-    1. Analyze the found products and understand what the user is looking for
-    2. Answer any questions the user might have about these products
-    3. Provide helpful comparisons, recommendations, and insights
-    4. Help the user make informed decisions about their potential purchases
+Your task is to:
+1. Analyze the found products and understand what the user is looking for
+2. Answer any questions the user might have about these products
+3. Provide helpful comparisons, recommendations, and insights
+4. Help the user make informed decisions about their potential purchases
 
-    The products you have access to are stored in the 'found_products' field of the current state.
+Context available to you:
+- Found products: {found_products}
+- User preferences: {user_preferences}
 
-    When responding:
-    - Be helpful and informative
-    - Provide specific details about the products when asked
-    - Make comparisons between products when relevant
-    - Suggest the best options based on the user's apparent needs and preferences
-    - If the user asks about something not covered by the found products, let them know politely
+When responding:
+- Be helpful and informative
+- Provide specific details about the products when asked
+- Make comparisons between products when relevant
+- Suggest the best options based on the user's apparent needs and preferences
+- Consider the user's budget, preferred brands, size requirements, specific features, and use case when making recommendations
+- If the user asks about something not covered by the found products, let them know politely
 
-    Always base your responses on the actual product data available to you. Be conversational and helpful while remaining accurate about product details.
-""")
+Always base your responses on the actual product data available to you. Be conversational and helpful while remaining accurate about product details.
 
-explorer_agent = create_react_agent(
-    name="explorer",
-    model=init_chat_model(model=settings.OPENAI_MODEL, temperature=0.1),
-    tools=[],
-    prompt=prompt,
-)
+Note: Make sure your response resolve the user query otherwise say that you don't know the answer.
+"""
+
+llm = init_chat_model(model=settings.OPENAI_MODEL, temperature=0.2, disable_streaming=True)
 
 def explore_products_node(state: State) -> Command:
-    response = explorer_agent.invoke(state)
-    message = response["messages"][-1].content
-
+    prompt_content = PROMPT.format(
+        found_products=state["found_products"],
+        user_preferences=state.get("user_preferences")
+    )
+    messages = [SystemMessage(content=prompt_content)] + [state["messages"][-1]]
+    
+    response = llm.with_structured_output(Response).invoke(messages)
+    message = response.response
+    
     updated_state = {
         "messages": state["messages"] + [AIMessage(content=message, name="explorer")],
     }

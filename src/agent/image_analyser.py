@@ -3,12 +3,10 @@ from langchain.chat_models import init_chat_model
 from langgraph.types import Command
 from langchain.prompts import PromptTemplate
 from src.state import State, ImageAnalysisOutput
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, SystemMessage
 from src.core.config import settings
 
-
-prompt = PromptTemplate(
-    template="""
+PROMPT = """
     You are an expert product image analyzer with advanced vision capabilities. You can see and analyze images that are provided to you.
 
     IMPORTANT: You have vision capabilities and can analyze images. Do not claim that you cannot see images.
@@ -44,29 +42,22 @@ prompt = PromptTemplate(
     Be thorough in identifying both what you can see and what additional information would be valuable for comprehensive product research.
     
     Return your analysis in the following structured format using the ImageAnalysisOutput schema.
-    """,
-)
+"""
 
-
-image_analyser_agent = create_react_agent(
-    name="image_analyser",
-    model=init_chat_model(model=settings.OPENAI_MODEL, temperature=0.1),
-    tools=[],
-    prompt=prompt,
-    response_format=ImageAnalysisOutput,
-)
+llm = init_chat_model(model=settings.OPENAI_MODEL, temperature=0.1, disable_streaming=True)
 
 def image_analyser_node(state: State) -> Command:
-    response = image_analyser_agent.invoke(state)
-    result = response["structured_response"]
+    messages = [SystemMessage(content=PROMPT)] + state["messages"]
+    
+    response = llm.with_structured_output(ImageAnalysisOutput).invoke(messages)
 
-    message = result.message
+    message = response.message
     if not message:
-        category = result.product_category
+        category = response.product_category
         message = f"I've analyzed the {category} in your image and extracted the visible attributes."
 
     updated_state = {
-        "analysis_output": result,
+        "analysis_output": response,
         "image_registered": True,
         "messages": state["messages"] + [AIMessage(content=message, name="image_analyser")],
     }

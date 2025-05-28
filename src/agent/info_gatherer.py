@@ -1,9 +1,7 @@
-from langgraph.prebuilt import create_react_agent
 from langchain.chat_models import init_chat_model
 from langgraph.types import Command
-from langchain.prompts import PromptTemplate
 from src.state import State, UserPreferences
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, SystemMessage
 from pydantic import BaseModel, Field
 from typing import Optional
 from src.core.config import settings
@@ -14,56 +12,55 @@ class InfoGathererResponse(BaseModel):
     extracted_preferences: Optional[UserPreferences] = Field(default=None, description="Extracted preferences if any, null if this is just a greeting or no preferences mentioned")
 
 
-prompt = PromptTemplate(
-    template="""
-    You are a helpful shopping assistant. Analyze the user's message and respond appropriately.
-    
-    If the user is greeting you (like "hi", "hello", etc.):
-    - Respond with a friendly greeting and ask what they're looking for
-    - Set extracted_preferences to null since no shopping info was provided
-    
-    If the user provides shopping preferences or product information:
-    - Acknowledge what you understood
-    - Extract any preferences mentioned into the extracted_preferences field
-    - Only extract information that is clearly mentioned - do not make up or assume anything
-    
-    For preference extraction guidelines:
-    - budget_range: formats like "$100-200", "under $500", "around $1000", etc.
-    - preferred_brands: any brand names mentioned
-    - specific_features: specific features or capabilities mentioned  
-    - use_case: how they plan to use the product
-    - size_requirements: size information if mentioned
-    
-    IMPORTANT: 
-    - Be conversational and helpful in your response_message
-    - Only populate extracted_preferences when the user actually provides shopping information
-    - NEVER make up fake data in extracted_preferences
-    - If no preferences are mentioned, set extracted_preferences to null
-    """,
-)
+PROMPT = """
+You are a helpful shopping assistant. Analyze the user's message and respond appropriately.
 
+Context available to you:
+- Current user preferences: {user_preferences}
 
-info_gatherer_agent = create_react_agent(
-    name="info_gatherer",
-    model=init_chat_model(model=settings.OPENAI_MODEL, temperature=0.1),
-    tools=[],
-    prompt=prompt,
-    response_format=InfoGathererResponse,
-)
+If the user is greeting you (like "hi", "hello", etc.):
+- Respond with a friendly greeting and ask what they're looking for
+- Set extracted_preferences to null since no shopping info was provided
 
+If the user provides shopping preferences or product information:
+- Acknowledge what you understood
+- Extract any preferences mentioned into the extracted_preferences field
+- Only extract information that is clearly mentioned - do not make up or assume anything
+- Consider the existing user preferences to avoid redundant extraction
+- Do NOT ask follow-up questions - simply acknowledge the information received
+
+For preference extraction guidelines:
+- budget_range: formats like "$100-200", "under $500", "around $1000", etc.
+- preferred_brands: any brand names mentioned
+- specific_features: specific features or capabilities mentioned  
+- use_case: how they plan to use the product
+- size_requirements: size information if mentioned
+
+IMPORTANT: 
+- Be conversational and helpful in your response_message
+- Only populate extracted_preferences when the user actually provides shopping information
+- NEVER make up fake data in extracted_preferences
+- If no preferences are mentioned, set extracted_preferences to null
+- If the user mentions preferences that are already captured, acknowledge them but don't duplicate in extracted_preferences
+- Do NOT ask questions - another agent will handle that
+"""
+
+llm = init_chat_model(model=settings.OPENAI_MODEL, temperature=0.1, disable_streaming=True)
 
 def info_gatherer_node(state: State) -> Command:
     """Extract preferences from user's response and update state."""
-    response = info_gatherer_agent.invoke(state)
-    structured_response = response["structured_response"]
+    prompt_content = PROMPT.format(user_preferences=state.get("user_preferences"))
+    messages = [SystemMessage(content=prompt_content)] + state["messages"]
     
-    ai_response = structured_response.response_message
+    response = llm.with_structured_output(InfoGathererResponse).invoke(messages)
+    
+    ai_response = response.response_message
     
     current_prefs = state.get("user_preferences", UserPreferences())
 
-    if structured_response.extracted_preferences:
+    if response.extracted_preferences:
         # Merge extracted preferences with existing ones
-        extracted = structured_response.extracted_preferences
+        extracted = response.extracted_preferences
         updated_prefs = UserPreferences(
             budget_range=extracted.budget_range or current_prefs.budget_range,
             preferred_brands=(extracted.preferred_brands or []) + (current_prefs.preferred_brands or []),
