@@ -4,6 +4,7 @@ from src.tools.db_tool import search_products, get_product_by_id
 from src.state import State, FoundProducts
 from langchain_core.messages import AIMessage
 from langgraph.types import Command
+from langgraph.graph import END
 
 llm = init_chat_model(model="gpt-4o")
 product_search_agent = create_react_agent(
@@ -46,6 +47,17 @@ def product_finder_node(state: State) -> Command:
     response = product_search_agent.invoke(state)
     
     result = response["structured_response"]
+    
+    # Check if no products were found
+    if not result.products or len(result.products) == 0:
+        return Command(
+            goto=END,
+            update={
+                "messages": state["messages"] + [
+                    AIMessage(content="I couldn't find any products matching your criteria in our database. Please try with a different image or adjust your preferences.", name="product_finder")
+                ]
+            }
+        )
     
     updated_messages = state["messages"] + [
         AIMessage(content=result.reason, name="product_searcher")

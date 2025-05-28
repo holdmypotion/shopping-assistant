@@ -22,13 +22,8 @@ class UserPreferences(BaseModel):
     budget_range: Optional[str] = Field(default=None, description="User's budget range (e.g., '$50-100', 'under $200')")
     preferred_brands: Optional[List[str]] = Field(default=None, description="List of preferred brands")
     size_requirements: Optional[str] = Field(default=None, description="Size requirements (e.g., 'Medium', 'Large', '32 inches')")
-    color_preferences: Optional[List[str]] = Field(default=None, description="Preferred colors")
     specific_features: Optional[List[str]] = Field(default=None, description="Specific features the user wants")
     use_case: Optional[str] = Field(default=None, description="How the user plans to use the product")
-    priority_attributes: Optional[List[str]] = Field(default=None, description="Most important attributes for the user")
-    additional_requirements: Optional[str] = Field(default=None, description="Any other specific requirements or preferences")
-    questions_asked: Optional[List[str]] = Field(default=None, description="Questions that have been asked to avoid repetition")
-    is_complete: Optional[bool] = Field(default=False, description="Whether enough information has been collected")
 
 class Product(BaseModel):
     """Represents a product from the database."""
@@ -54,3 +49,5 @@ class State(MessagesState):
     remaining_steps: Optional[List[str]] = None
     next_node: Optional[str] = None
     image_registered: Optional[bool] = Field(default=False, description="Whether an image has been registered and processed")
+    current_question: Optional[str] = Field(default=None, description="Current question to ask the user")
+    questions_asked_count: Optional[int] = Field(default=0, description="Number of questions asked to the user")
