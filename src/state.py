@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from langgraph.graph import MessagesState
 
@@ -25,27 +25,11 @@ class UserPreferences(BaseModel):
     specific_features: Optional[List[str]] = Field(default=None, description="Specific features the user wants")
     use_case: Optional[str] = Field(default=None, description="How the user plans to use the product")
 
-class Product(BaseModel):
-    """Represents a product from the database."""
-    id: Optional[str] = Field(default=None, description="Product ID")
-    name: Optional[str] = Field(default=None, description="Product name")
-    category: Optional[str] = Field(default=None, description="Product category")
-    brand: Optional[str] = Field(default=None, description="Product brand")
-    price: Optional[float] = Field(default=None, description="Product price")
-    attributes: Optional[Dict[str, str]] = Field(default=None, description="Product attributes")
-    description: Optional[str] = Field(default=None, description="Product description")
-
-class FoundProducts(BaseModel):
-    """Structured output for found products."""
-    products: Optional[List[Product]] = Field(default=None, description="List of products found")
-    reason: Optional[str] = Field(default=None, description="Explanation of why these products were selected")
-
-
 class State(MessagesState):
     """State for the agent."""
     analysis_output: Optional[ImageAnalysisOutput] = None
     user_preferences: Optional[UserPreferences] = None
-    found_products: Optional[List[Product]] = None
+    found_products: Optional[List[Dict[str, Any]]] = None
     remaining_steps: Optional[List[str]] = None
     next_node: Optional[str] = None
     image_registered: Optional[bool] = Field(default=False, description="Whether an image has been registered and processed")

@@ -6,7 +6,7 @@ from src.state import State, UserPreferences
 from langchain_core.messages import AIMessage
 from typing import Optional
 from pydantic import BaseModel, Field
-
+from src.core.config import settings
 
 class QuestionOutput(BaseModel):
     """Output format for info_prober to generate questions."""
@@ -77,7 +77,7 @@ prompt = PromptTemplate(
 
 info_prober_agent = create_react_agent(
     name="info_prober",
-    model=init_chat_model(model="gpt-4o", temperature=0.3),
+    model=init_chat_model(model=settings.OPENAI_MODEL, temperature=0.3),
     tools=[],
     prompt=prompt.format(preferences=UserPreferences.model_json_schema()),
     response_format=QuestionOutput,

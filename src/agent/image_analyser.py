@@ -4,6 +4,7 @@ from langgraph.types import Command
 from langchain.prompts import PromptTemplate
 from src.state import State, ImageAnalysisOutput
 from langchain_core.messages import AIMessage
+from src.core.config import settings
 
 
 prompt = PromptTemplate(
@@ -49,7 +50,7 @@ prompt = PromptTemplate(
 
 image_analyser_agent = create_react_agent(
     name="image_analyser",
-    model=init_chat_model(model="gpt-4o", temperature=0.1),
+    model=init_chat_model(model=settings.OPENAI_MODEL, temperature=0.1),
     tools=[],
     prompt=prompt,
     response_format=ImageAnalysisOutput,

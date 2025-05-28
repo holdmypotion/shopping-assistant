@@ -14,18 +14,11 @@ def is_human_message(message):
 
 def is_enough_info_for_product_search(state: State) -> bool:
     """Check if we have enough information to search for products."""
-    analysis_output = state.get("analysis_output")
     user_preferences = state.get("user_preferences")
-    
-    # Need image analysis
-    if not analysis_output:
-        return False
-    
-    # Need some user preferences
+
     if not user_preferences:
         return False
-    
-    # Consider it enough if we have budget and at least one other preference
+
     has_budget = user_preferences.budget_range is not None
     has_other_pref = any([
         user_preferences.preferred_brands,
@@ -35,3 +28,6 @@ def is_enough_info_for_product_search(state: State) -> bool:
     ])
     
     return has_budget and has_other_pref
+
+def no_image_no_data(state: State) -> bool:
+    return state.get("image_registered") in [None, False] and not is_enough_info_for_product_search(state) and state.get("found_products") in [None, []]
