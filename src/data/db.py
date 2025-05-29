@@ -1,9 +1,9 @@
 MOCK_PRODUCTS = [
-    # SHOES
+    # footwear
     {
         "id": "1",
         "name": "Classic White Sneakers",
-        "category": "shoes",
+        "category": "footwear",
         "brand": "Nike",
         "price": 89.99,
         "attributes": {
@@ -17,8 +17,8 @@ MOCK_PRODUCTS = [
     },
     {
         "id": "2",
-        "name": "Running Shoes",
-        "category": "shoes", 
+        "name": "Running footwear",
+        "category": "footwear", 
         "brand": "Adidas",
         "price": 129.99,
         "attributes": {
@@ -28,12 +28,12 @@ MOCK_PRODUCTS = [
             "style": "athletic",
             "gender": "unisex"
         },
-        "description": "High-performance running shoes with responsive cushioning"
+        "description": "High-performance running footwear with responsive cushioning"
     },
     {
         "id": "3",
         "name": "High Heel Pumps",
-        "category": "shoes",
+        "category": "footwear",
         "brand": "Christian Louboutin",
         "price": 695.00,
         "attributes": {
@@ -49,7 +49,7 @@ MOCK_PRODUCTS = [
     {
         "id": "4",
         "name": "Hiking Boots",
-        "category": "shoes",
+        "category": "footwear",
         "brand": "Timberland",
         "price": 189.99,
         "attributes": {
@@ -65,7 +65,7 @@ MOCK_PRODUCTS = [
     {
         "id": "5",
         "name": "Canvas Sneakers",
-        "category": "shoes",
+        "category": "footwear",
         "brand": "Converse",
         "price": 55.00,
         "attributes": {
@@ -80,7 +80,7 @@ MOCK_PRODUCTS = [
     {
         "id": "6",
         "name": "Ballet Flats",
-        "category": "shoes",
+        "category": "footwear",
         "brand": "Tory Burch",
         "price": 228.00,
         "attributes": {
@@ -94,8 +94,8 @@ MOCK_PRODUCTS = [
     },
     {
         "id": "7",
-        "name": "Oxford Dress Shoes",
-        "category": "shoes",
+        "name": "Oxford Dress footwear",
+        "category": "footwear",
         "brand": "Cole Haan",
         "price": 280.00,
         "attributes": {
@@ -105,12 +105,12 @@ MOCK_PRODUCTS = [
             "style": "formal",
             "gender": "men"
         },
-        "description": "Classic black leather oxford shoes for formal occasions"
+        "description": "Classic black leather oxford footwear for formal occasions"
     },
     {
         "id": "8",
         "name": "Sandals",
-        "category": "shoes",
+        "category": "footwear",
         "brand": "Birkenstock",
         "price": 135.00,
         "attributes": {

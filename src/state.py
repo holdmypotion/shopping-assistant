@@ -39,8 +39,6 @@ class ProductSearchDetails(BaseModel):
 class State(MessagesState):
     """State for the agent."""
     product_search_details: Optional[ProductSearchDetails] = None
-    product_found: Optional[bool] = Field(default=False, description="Whether a product has been found")
     next_node: str = "supervisor"
     image_registered: Optional[bool] = Field(default=False, description="Whether an image has been registered and processed")
-    current_question: Optional[str] = Field(default=None, description="Current question to ask the user")
     remaining_steps: Optional[List[str]] = None

@@ -2,19 +2,17 @@
 
 ## 🛍️ Project Overview
 
-This is a sophisticated **Shopping Assistant** built using [LangGraph](https://github.com/langchain-ai/langgraph), a framework for building stateful, multi-agent conversational AI applications. The assistant helps users find products by analyzing images, gathering preferences, and searching through a product database using a coordinated multi-agent approach.
+This is a sophisticated **Shopping Assistant** built using [LangGraph](https://github.com/langchain-ai/langgraph), a framework for building stateful, multi-agent conversational AI applications. The assistant helps users find products by analyzing images, gathering preferences through conversation, and searching through a product database using a streamlined multi-agent approach.
 
 ## 🏗️ Architecture
 
-The application implements a **multi-agent orchestration pattern** with the following specialized agents:
+The application implements a **streamlined multi-agent orchestration pattern** with the following specialized agents:
 
 ### Core Agents
 
-1. **Supervisor** (`supervisor.py`) - The orchestrator that routes between agents based on user input and application state
+1. **Supervisor** (`supervisor.py`) - The orchestrator that routes between agents based on user input type
 2. **Image Analyser** (`image_analyser.py`) - Processes product images to extract visual attributes
-3. **Info Gatherer** (`info_gatherer.py`) - Extracts product preferences from conversational text
-4. **Info Prober** (`info_prober.py`) - Generates targeted questions to gather missing information
-5. **Product Search** (`product_search.py`) - Searches the product database using collected criteria
+3. **Product Search** (`product_search.py`) - Handles conversational interaction and intelligent product searching
 
 ### Workflow
 
@@ -23,14 +21,11 @@ graph TD
     A[User Input] --> B[Supervisor]
     B --> C{Has Image?}
     C -->|Yes| D[Image Analyser]
-    C -->|No| E{Has Product Info?}
-    E -->|Yes| F[Info Gatherer]
-    E -->|No| G[Info Prober]
-    D --> H[Product Search]
-    F --> H
-    G --> I[Wait for User Response]
-    I --> B
-    H --> J[Return Results]
+    C -->|No| E[Product Search]
+    D --> F[Product Search]
+    E --> G[Response to User]
+    F --> G
+    G --> H[End or Continue Conversation]
 ```
 
 ## 🚀 Prerequisites
@@ -149,11 +144,10 @@ class State(MessagesState):
 
 #### 1. **Supervisor Agent** - Traffic Controller
 - **Purpose**: Routes user requests to appropriate specialized agents
-- **Logic**:
+- **Simplified Logic**:
   - Detects images → Routes to Image Analyser
-  - Detects product info → Routes to Info Gatherer  
-  - Missing information → Routes to Info Prober
-  - Ready to search → Routes to Product Search
+  - Text input → Routes directly to Product Search
+  - Uses `next_node` state for routing control
 
 #### 2. **Image Analyser Agent** - Computer Vision
 - **Purpose**: Extracts product attributes from uploaded images
@@ -164,26 +158,13 @@ class State(MessagesState):
   - Suggests additional research attributes
 - **Output**: Structured `ProductSearchDetails` with confidence scores
 
-#### 3. **Info Gatherer Agent** - Natural Language Understanding  
-- **Purpose**: Extracts product preferences from conversational text
-- **Capabilities**:
-  - Handles greetings and casual conversation
-  - Extracts specific product details (brand, price, size, etc.)
-  - Avoids duplicate information extraction
-  - Maintains conversational flow
-- **Intelligence**: Only extracts explicitly mentioned details, doesn't assume
-
-#### 4. **Info Prober Agent** - Strategic Questioning
-- **Purpose**: Generates targeted questions to fill information gaps
-- **Strategy**:
-  - Prioritizes critical fields (price → category → size → brand)
-  - Avoids asking about already-known information
-  - Uses product context for relevant questions
-  - Maintains natural conversation flow
-- **Completion Logic**: Considers search ready when price + 2 other fields are collected
-
-#### 5. **Product Search Agent** - Database Integration
-- **Purpose**: Performs intelligent product searches using collected criteria
+#### 3. **Product Search Agent** - Conversational AI & Database Integration
+- **Purpose**: Handles all conversational interaction and performs intelligent product searches
+- **Enhanced Capabilities**:
+  - **Conversational Intelligence**: Manages greetings, questions, and natural dialogue
+  - **Information Gathering**: Extracts product preferences from user messages
+  - **Strategic Questioning**: Asks targeted questions to gather missing details
+  - **Database Search**: Performs intelligent product searches using collected criteria
 - **Tools Available**:
   - `search_products`: Multi-criteria product search
   - `get_all_categories`: Browse available categories
@@ -195,16 +176,13 @@ class State(MessagesState):
 ### Example User Journey
 
 1. **User**: "Hi, I'm looking for headphones" 
-   - **Info Gatherer**: Extracts category="headphones"
-   - **Info Prober**: Asks about budget range
+   - **Product Search**: Welcomes user, extracts category="headphones", asks about budget
 
 2. **User**: "Around $100-200"
-   - **Info Gatherer**: Extracts price="$100-200"  
-   - **Info Prober**: Asks about style preferences (over-ear, in-ear, wireless)
+   - **Product Search**: Extracts price="$100-200", asks about style preferences (over-ear, in-ear, wireless)
 
 3. **User**: "Wireless would be great"
-   - **Info Gatherer**: Extracts style="wireless"
-   - **Product Search**: Searches database with criteria: category=headphones, price=$100-200, style=wireless
+   - **Product Search**: Extracts style="wireless", searches database with criteria and returns matching products
 
 4. **System**: Returns matching products with details and recommendations
 
@@ -214,12 +192,13 @@ class State(MessagesState):
 Users can upload product images to start their search:
 - AI vision extracts visible attributes
 - System automatically fills search criteria
-- Follows up with targeted questions for missing details
+- Product Search agent follows up with targeted questions for missing details
 
-#### Conversational Memory
+#### Conversational Intelligence
+- Single agent handles all conversation aspects
 - Maintains context across multiple exchanges
-- Avoids redundant questions
-- Builds comprehensive user preferences over time
+- Balances information gathering with product searching
+- Natural dialogue flow with strategic questioning
 
 #### Confidence-Based Routing
 - Image analysis includes confidence scoring
@@ -233,11 +212,9 @@ Users can upload product images to start their search:
 ```
 src/
 ├── agent/                    # Core agent implementations
-│   ├── supervisor.py        # Main orchestrator
+│   ├── supervisor.py        # Main orchestrator (simplified routing)
 │   ├── image_analyser.py    # Computer vision agent
-│   ├── info_gatherer.py     # NLU agent
-│   ├── info_prober.py       # Question generation agent
-│   └── product_search.py    # Search agent
+│   └── product_search.py    # Conversational AI + search agent
 ├── state.py                 # Application state definitions
 ├── core/                    # Configuration and settings
 ├── tools/                   # Database and external tools
@@ -248,7 +225,7 @@ src/
 ### Customization Points
 
 1. **Add New Product Attributes**: Extend `ProductSearchDetails` in `state.py`
-2. **Modify Agent Behavior**: Update prompts and logic in individual agent files
+2. **Modify Conversation Flow**: Update prompts and logic in `product_search.py`
 3. **Add Search Tools**: Extend the tools available to `product_search.py`
 4. **Change Routing Logic**: Modify decision tree in `supervisor.py`
 
