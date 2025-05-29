@@ -1,10 +1,11 @@
-from langgraph.prebuilt import create_react_agent
+from pydantic import BaseModel, Field
+from typing import Optional
 from langchain.chat_models import init_chat_model
 from langgraph.types import Command
-from langchain.prompts import PromptTemplate
-from src.state import State, ImageAnalysisOutput
+from src.state import State, ProductSearchDetails
 from langchain_core.messages import AIMessage, SystemMessage
 from src.core.config import settings
+from langgraph.graph import END
 
 PROMPT = """
     You are an expert product image analyzer with advanced vision capabilities. You can see and analyze images that are provided to you.
@@ -41,25 +42,43 @@ PROMPT = """
 
     Be thorough in identifying both what you can see and what additional information would be valuable for comprehensive product research.
     
-    Return your analysis in the following structured format using the ImageAnalysisOutput schema.
+    Return your analysis in the following structured format using the ProductSearchDetails schema.
 """
 
-llm = init_chat_model(model=settings.OPENAI_MODEL, temperature=0.1, disable_streaming=True)
+class ImageAnalyserOutput(BaseModel):
+    """Represents the output of the image analyser."""
+    product_search_details: ProductSearchDetails = Field(description="The product search details")
+    overall_confidence: Optional[float] = Field(default=None, description="Overall confidence in the analysis")
+    message: Optional[str] = Field(default=None, description="Describe the product in 1 or 2 sentences")
+
+llm = init_chat_model(
+    model=settings.OPENAI_MODEL,
+    disable_streaming=True
+).with_structured_output(ImageAnalyserOutput)
 
 def image_analyser_node(state: State) -> Command:
     messages = [SystemMessage(content=PROMPT)] + state["messages"]
     
-    response = llm.with_structured_output(ImageAnalysisOutput).invoke(messages)
+    response = llm.invoke(messages)
 
     message = response.message
     if not message:
-        category = response.product_category
-        message = f"I've analyzed the {category} in your image and extracted the visible attributes."
+        message = f"I've analyzed the {response.product_search_details.category} in your image and extracted the visible attributes."
 
     updated_state = {
-        "analysis_output": response,
+        "product_search_details": response.product_search_details,
         "image_registered": True,
-        "messages": state["messages"] + [AIMessage(content=message, name="image_analyser")],
+        "next_node": "product_search",
+        "messages":[AIMessage(content=message, name="image_analyser")],
     }
+    goto = "supervisor"
 
-    return Command(goto="supervisor", update=updated_state)
+    if response.overall_confidence is None or response.overall_confidence < 0.5:
+        message = "I'm not sure what the product is. Please provide more information or upload a different image."
+        updated_state = {
+            "next_node": "supervisor",
+            "messages": state["messages"] + [AIMessage(content=message, name="image_analyser")],
+        }
+        goto = END
+
+    return Command(goto=goto, update=updated_state)

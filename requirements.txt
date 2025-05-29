@@ -1,4 +1,4 @@
--e git+ssh://git@github.com-personal/holdmypotion/shopping-assistant.git@b052dd93379cf108f3394882f717fb2953327974#egg=agent
+-e git+ssh://git@github.com-personal/holdmypotion/shopping-assistant.git@b79e08375fcbab0cab2d9ad38502d68df5827728#egg=agent
 annotated-types==0.7.0
 anyio==4.9.0
 blockbuster==1.5.24

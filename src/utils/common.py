@@ -12,6 +12,12 @@ def is_human_message(message):
     """Check if a message is from a human."""
     return hasattr(message, 'type') and message.type == 'human'
 
+def has_image_in_human_message(message):
+    """Check if a human message contains an image."""
+    if is_human_message(message):
+        return has_image_in_message(message)
+    return False
+
 def is_enough_info_for_product_search(state: State) -> bool:
     """Check if we have enough information to search for products."""
     user_preferences = state.get("user_preferences")
